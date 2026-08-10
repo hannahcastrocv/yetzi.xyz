@@ -32,7 +32,6 @@ export default function Hero() {
 
         <div className="panel">
           <div className="name">
-            {siteConfig.brandName}
             <span className="tick">{siteConfig.ticker}</span>
           </div>
           <p className="tagline">{siteConfig.tagline}</p>

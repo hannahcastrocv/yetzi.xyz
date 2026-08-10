@@ -186,3 +186,100 @@ Everything visual is in `src/styles.css`:
   `index.html`.
 - **How the scene crops on each screen:** the `--fx` / `--fy` focal point on
   `.scene` (and its media queries) decides what stays centred.
+
+---
+
+## 🗺️ Pages & routing (NEW)
+
+The site is now three routes, using a **hash router** so it works on any static
+host (GitHub Pages, Netlify, Vercel, S3…) with **no server rewrite rules**:
+
+| Route            | Page          | What it is |
+|------------------|---------------|------------|
+| `/#/`            | Home          | The animated hero (unchanged). |
+| `/#/cave`        | The Cave      | Holder-only area → wallet connect → **Proof of Yeti** card. |
+| `/#/mountain`    | The Mountain  | Market-cap climb visualised on a stylised YETZI mountain. |
+
+A small floating nav (top-left) switches between them. The homepage art,
+animations and layout are untouched.
+
+## 🖼️ Artwork & favicon (NEW)
+
+- **PHOTO 1** (the YETZI head) is used **only** in The Cave / Proof of Yeti and
+  as the favicon. It lives at **`public/assets/photo1.webp`** (transparent
+  cut-out). Swap that one file to change the Cave art everywhere.
+- Favicons: `public/favicon.ico`, `public/favicon-256.png`,
+  `public/apple-touch-icon.png` (all generated from PHOTO 1).
+- The homepage `$YETZI` badge no longer prints the word "YETZI" beside it.
+
+## 🔗 The Cave — live holder data
+
+Everything shown is **real, on-chain data** read from the Arc JSON-RPC
+(`chain.rpcUrl` in config, CORS-open). A visitor connects an injected wallet
+(MetaMask/Rabby) — or pastes any address to look it up — and we read:
+
+- **YETZI held** and **share of supply** — live via `balanceOf` on Arc.
+- **Total supply / symbol / decimals** — live from the token contract.
+
+Data we **cannot** verify from a public browser API is simply **not shown**
+(e.g. holder rank). To enable rank, set `dataSources.holderRankApi` to a URL
+that returns `{ "rank": 123 }` (use `{address}` as a placeholder in the URL).
+
+The **Proof of Yeti** card only appears for real holders (balance > 0), and
+`SHARE MY PROOF` opens a pre-filled X post. It's designed to be screenshot-worthy.
+
+## 🏔️ The Mountain — market cap climb
+
+- The mountain **terrain is designed art**, not a plotted price history (there's
+  no public historical feed). **Milestones** are configurable market-cap targets
+  (`mountainMilestones`), and the **"YETZI IS HERE"** marker sits at the current
+  market cap on a log scale — it moves automatically as data updates (60s).
+- **Total supply is always live** (on-chain). **Market cap = price × supply.**
+  There is no reliable public browser price feed for this token yet
+  (RadarDEX's API is Cloudflare-gated), so until you connect one the page runs on
+  `demoMarketCap` and shows a visible **`◐ DEMO DATA`** badge — never presented
+  as live.
+
+### Going live on price
+
+Set **`dataSources.priceApi`** to a URL returning `{ "priceUsd": 0.00000123 }`
+(or edit `fetchPriceUsd()` in `src/lib/market.js` to match your feed / read the
+DEX pool directly with ethers). Once a price resolves, the badge flips to
+**`● LIVE`** and the market cap becomes real automatically.
+
+### Editing milestones
+
+```js
+mountainMilestones: [
+  { mc: 10000,  name: "BASE CAMP",  blurb: "The climb begins." },
+  { mc: 100000, name: "SNOW GATE",  blurb: "Through the white gate." },
+  // add / remove / rename freely — keep ascending order
+],
+```
+
+## 🧩 Project structure (NEW)
+
+```
+src/
+  config.js            ← all content + data-source settings
+  App.jsx              ← hash router (Home / Cave / Mountain) + nav
+  pages/               ← Home, Cave, Mountain
+  components/          ← Hero (+ homepage parts), Nav, WalletConnect,
+                         HolderProfile, ProofOfYeti, MountainChart, MountainMilestone
+  lib/
+    chain.js           ← real on-chain reads (balanceOf, totalSupply)
+    market.js          ← market-cap provider (live price hook + demo fallback)
+    wallet.js          ← EIP-1193 connect
+    format.js          ← number / address formatting
+```
+
+## 🏗️ Build & deploy
+
+```bash
+npm install
+npm run build      # → dist/  (upload the folder to any static host)
+```
+
+Because it's a hash router, no redirects/rewrites are needed. `preview/index.html`
+is a single self-contained copy of the whole app (all three pages, images baked
+in) — handy for a quick look or a one-file host.
